@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { gsap } from 'gsap';
-	import { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import { fly } from 'svelte/transition';
 	import { brandedOgImageUrl } from '../lib/community/og';
 	import { flameborns, type FlamebornProfile } from '../lib/characters';
@@ -120,6 +118,7 @@
 	let menuOpen = $state(false);
 	let heroCarouselPaused = $state(false);
 	let messageInput = $state<HTMLInputElement>();
+	let storyScrollTrigger: { start: number; end: number } | null = null;
 	const featuredCharacter = $derived(featuredCharacters[activeCharacter]);
 
 	function changeCharacter(direction: -1 | 1) {
@@ -128,7 +127,7 @@
 	}
 
 	function goToScene(index: number) {
-		const trigger = ScrollTrigger.getById('companion-stories');
+		const trigger = storyScrollTrigger;
 		if (!trigger) {
 			document.querySelectorAll<HTMLElement>('.story-scene')[index]?.scrollIntoView({
 				behavior: 'smooth',
@@ -172,90 +171,117 @@
 	}
 
 	onMount(() => {
-		gsap.registerPlugin(ScrollTrigger);
-		const media = gsap.matchMedia();
-		const heroRotation = window.setInterval(() => {
-			if (
-				!heroCarouselPaused &&
-				!document.hidden &&
-				!previewOpen &&
-				!window.matchMedia('(prefers-reduced-motion: reduce)').matches
-			) {
-				changeCharacter(1);
-			}
-		}, 5500);
-		const context = gsap.context(() => {
-			gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((element) => {
-				gsap.from(element, {
-					y: 28,
-					autoAlpha: 0,
-					duration: 0.8,
-					ease: 'power2.out',
-					scrollTrigger: { trigger: element, start: 'top 88%', once: true }
+		let disposed = false;
+		let heroRotation: number | undefined;
+		let cleanupAnimations = () => {};
+		window.addEventListener('keydown', handlePreviewKeydown);
+
+		async function initializeAnimations() {
+			const [{ gsap }, { ScrollTrigger }] = await Promise.all([
+				import('gsap'),
+				import('gsap/ScrollTrigger')
+			]);
+			if (disposed) return;
+
+			gsap.registerPlugin(ScrollTrigger);
+			const media = gsap.matchMedia();
+			heroRotation = window.setInterval(() => {
+				if (
+					!heroCarouselPaused &&
+					!document.hidden &&
+					!previewOpen &&
+					!window.matchMedia('(prefers-reduced-motion: reduce)').matches
+				) {
+					changeCharacter(1);
+				}
+			}, 5500);
+			const context = gsap.context(() => {
+				gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((element) => {
+					gsap.from(element, {
+						y: 28,
+						autoAlpha: 0,
+						duration: 0.8,
+						ease: 'power2.out',
+						scrollTrigger: { trigger: element, start: 'top 88%', once: true }
+					});
+				});
+
+				media.add('(prefers-reduced-motion: no-preference)', () => {
+					const panels = gsap.utils.toArray<HTMLElement>('.story-scene');
+					gsap.set(panels, { autoAlpha: 0, y: 22, scale: 0.985 });
+					gsap.set(panels[0], { autoAlpha: 1, y: 0, scale: 1 });
+					const timeline = gsap.timeline({
+						scrollTrigger: {
+							id: 'companion-stories',
+							trigger: '.story-section',
+							start: 'top top',
+							end: () =>
+								`+=${(panels.length - 1) * (window.innerWidth < 760 ? Math.max(720, window.innerHeight * 1.1) : 1500)}`,
+							pin: '.story-stage',
+							pinSpacing: true,
+							scrub: 0.65,
+							anticipatePin: 1,
+							onUpdate: (self) => {
+								activeScene = Math.round(self.progress * (panels.length - 1));
+							}
+						}
+					});
+					storyScrollTrigger = timeline.scrollTrigger ?? null;
+
+					for (let index = 1; index < panels.length; index += 1) {
+						const position = index - 1;
+						timeline
+							.to(
+								panels[index - 1],
+								{ autoAlpha: 0, y: -20, scale: 0.985, duration: 0.35 },
+								position
+							)
+							.to(panels[index], { autoAlpha: 1, y: 0, scale: 1, duration: 0.5 }, position + 0.12);
+					}
 				});
 			});
 
 			media.add('(prefers-reduced-motion: no-preference)', () => {
-				const panels = gsap.utils.toArray<HTMLElement>('.story-scene');
-				gsap.set(panels, { autoAlpha: 0, y: 22, scale: 0.985 });
-				gsap.set(panels[0], { autoAlpha: 1, y: 0, scale: 1 });
-				const timeline = gsap.timeline({
+				const track = document.querySelector<HTMLElement>('.stories-track');
+				const rail = document.querySelector<HTMLElement>('.stories-rail');
+				if (!track || !rail) return;
+
+				const distance = () => Math.max(0, track.scrollWidth - rail.clientWidth);
+				rail.classList.add('has-scroll-animation');
+				gsap.to(track, {
+					x: () => -distance(),
+					ease: 'none',
 					scrollTrigger: {
-						id: 'companion-stories',
-						trigger: '.story-section',
-						start: 'top top',
-						end: () =>
-							`+=${(panels.length - 1) * (window.innerWidth < 760 ? Math.max(720, window.innerHeight * 1.1) : 1500)}`,
-						pin: '.story-stage',
-						pinSpacing: true,
-						scrub: 0.65,
+						id: 'small-moments-stories',
+						trigger: rail,
+						start: () =>
+							`top top+=${Math.max(70, Math.round((window.innerHeight - rail.offsetHeight) / 2))}`,
+						end: () => `+=${Math.ceil(distance() * 1.5)}`,
+						pin: rail,
+						scrub: 0.6,
 						anticipatePin: 1,
-						onUpdate: (self) => {
-							activeScene = Math.round(self.progress * (panels.length - 1));
-						}
+						invalidateOnRefresh: true
 					}
 				});
-
-				for (let index = 1; index < panels.length; index += 1) {
-					const position = index - 1;
-					timeline
-						.to(panels[index - 1], { autoAlpha: 0, y: -20, scale: 0.985, duration: 0.35 }, position)
-						.to(panels[index], { autoAlpha: 1, y: 0, scale: 1, duration: 0.5 }, position + 0.12);
-				}
+				return () => rail.classList.remove('has-scroll-animation');
 			});
+
+			cleanupAnimations = () => {
+				if (heroRotation !== undefined) window.clearInterval(heroRotation);
+				media.revert();
+				context.revert();
+				storyScrollTrigger = null;
+			};
+		}
+
+		void initializeAnimations().catch((cause: unknown) => {
+			console.error('Could not initialize Flameborn page animations.', cause);
 		});
 
-		media.add('(prefers-reduced-motion: no-preference)', () => {
-			const track = document.querySelector<HTMLElement>('.stories-track');
-			const rail = document.querySelector<HTMLElement>('.stories-rail');
-			if (!track || !rail) return;
-
-			const distance = () => Math.max(0, track.scrollWidth - rail.clientWidth);
-			rail.classList.add('has-scroll-animation');
-			gsap.to(track, {
-				x: () => -distance(),
-				ease: 'none',
-				scrollTrigger: {
-					id: 'small-moments-stories',
-					trigger: rail,
-					start: () =>
-						`top top+=${Math.max(70, Math.round((window.innerHeight - rail.offsetHeight) / 2))}`,
-					end: () => `+=${Math.ceil(distance() * 1.5)}`,
-					pin: rail,
-					scrub: 0.6,
-					anticipatePin: 1,
-					invalidateOnRefresh: true
-				}
-			});
-			return () => rail.classList.remove('has-scroll-animation');
-		});
-
-		window.addEventListener('keydown', handlePreviewKeydown);
 		return () => {
-			window.clearInterval(heroRotation);
+			disposed = true;
 			window.removeEventListener('keydown', handlePreviewKeydown);
-			media.revert();
-			context.revert();
+			cleanupAnimations();
 		};
 	});
 </script>
