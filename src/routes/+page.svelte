@@ -4,6 +4,7 @@
 	import { brandedOgImageUrl } from '../lib/community/og';
 	import { flameborns, type FlamebornProfile } from '../lib/characters';
 	import FlameIcon from '../lib/FlameIcon.svelte';
+	import ThemeToggle from '../lib/ThemeToggle.svelte';
 	import { jsonLdScript } from '../lib/seo';
 	import { SITE_URL } from '../lib/site';
 
@@ -290,7 +291,6 @@
 	<title>{pageTitle}</title>
 	<meta name="description" content={pageDescription} />
 	<meta name="application-name" content="Flameborns" />
-	<meta name="theme-color" content="#f8f5ef" />
 	<link rel="canonical" href={`${SITE_URL}/`} />
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="Flameborns" />
@@ -325,6 +325,7 @@
 		<a href="#companions" onclick={() => (menuOpen = false)}>Meet your Flameborn</a>
 		<a href="#how-it-feels" onclick={() => (menuOpen = false)}>The feeling</a>
 		<a href="#everywhere" onclick={() => (menuOpen = false)}>Everywhere</a>
+		<ThemeToggle />
 		<button class="nav-cta" onclick={() => openPreview()}>Meet yours <span>↗</span></button>
 	</nav>
 	<button
@@ -549,7 +550,9 @@
 		</div>
 		<div class="crew-grid">
 			{#each flameborns as friend, index}
-				<article
+				<a
+					href={`/${friend.slug}`}
+					aria-label={`Explore ${friend.name}`}
 					class:crew-first-light={index < 2}
 					class="crew-card"
 					data-reveal
@@ -570,13 +573,9 @@
 							<span>{friend.title}</span>
 						</div>
 						<p>{friend.domain}</p>
-						<a
-							class="crew-profile-link"
-							href={`/${friend.slug}`}
-							aria-label={`Explore ${friend.name}`}>↗</a
-						>
+						<span class="crew-profile-link" aria-hidden="true">↗</span>
 					</div>
-				</article>
+				</a>
 			{/each}
 		</div>
 		<p class="crew-footnote">

@@ -2,6 +2,7 @@
 	import { brandedOgImageUrl } from '../../lib/community/og';
 	import { flameborns } from '../../lib/characters';
 	import FlameIcon from '../../lib/FlameIcon.svelte';
+	import ThemeToggle from '../../lib/ThemeToggle.svelte';
 	import { jsonLdScript } from '../../lib/seo';
 	import { SITE_URL } from '../../lib/site';
 	import type { PageData } from './$types';
@@ -135,7 +136,10 @@
 		<a class="profile-wordmark" href="/" aria-label="Flameborns home">
 			<img src="/assets/dlst.gif" alt="" /> flameborns<span>.</span>
 		</a>
-		<a class="profile-back-link" href="/#companions">Meet all Flameborns <span>↗</span></a>
+		<div class="profile-nav-actions">
+			<ThemeToggle />
+			<a class="profile-back-link" href="/#companions">Meet all Flameborns <span>↗</span></a>
+		</div>
 	</header>
 
 	<section class="profile-hero" aria-labelledby="profile-title">
@@ -285,12 +289,79 @@
 		color: var(--ink);
 	}
 
+	:global(:root[data-theme='dark']) .profile-page {
+		--ink: #f4efe7;
+		--muted: #c1b6a8;
+		--paper: #171614;
+		background: var(--paper);
+		color: var(--ink);
+	}
+
+	:global(:root[data-theme='dark']) .profile-page :is(.profile-about, .profile-related) {
+		background: #24211d;
+	}
+
+	:global(:root[data-theme='dark'])
+		.profile-page
+		:is(
+			.profile-related > div > a,
+			.profile-cta,
+			.platform-options > button,
+			.platform-detail,
+			.discord-command
+		) {
+		border-color: rgba(244, 239, 231, 0.15);
+		background: #2b2823;
+		color: #f4efe7;
+	}
+
+	:global(:root[data-theme='dark']) .profile-page .profile-quote {
+		border-color: rgba(244, 239, 231, 0.16);
+		background: rgba(39, 36, 31, 0.92);
+		color: #f4efe7;
+	}
+
+	:global(:root[data-theme='dark'])
+		.profile-page
+		:is(
+			.profile-full-name,
+			.profile-intro,
+			.profile-section-kicker,
+			.profile-ways > p,
+			.profile-platform-heading > p,
+			.platform-status,
+			.platform-detail-copy > p:not(.profile-section-kicker),
+			.discord-preview-copy > p:not(.profile-section-kicker, .discord-preview-note),
+			.discord-command > div > span,
+			.discord-command small,
+			.discord-preview-note,
+			.profile-quote > span,
+			.profile-art-caption
+		) {
+		color: #d1c7bb;
+	}
+
+	:global(:root[data-theme='dark'])
+		.profile-page
+		:is(.profile-about h2 em, .profile-platform-heading h2 em, .discord-preview-copy h3 em) {
+		color: #ed9774;
+	}
+
+	:global(:root[data-theme='dark']) .profile-page .profile-footer {
+		border-color: rgba(244, 239, 231, 0.14);
+		color: #c1b6a8;
+	}
+
 	.profile-nav,
 	.profile-footer {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		padding: 21px 7.1%;
+	}
+
+	.profile-nav-actions :global(.theme-toggle) {
+		color: var(--ink);
 	}
 
 	.profile-related {
