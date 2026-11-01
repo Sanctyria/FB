@@ -1,0 +1,10 @@
+import type { RequestHandler } from './$types';
+import { SITE_URL } from '../../lib/site';
+
+export const GET: RequestHandler = () =>
+	new Response(`User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`, {
+		headers: {
+			'content-type': 'text/plain; charset=utf-8',
+			'cache-control': 'public, max-age=3600'
+		}
+	});

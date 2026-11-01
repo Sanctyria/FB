@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter:wght@100..900&display=swap');
+@import 'tailwindcss';
+
+@theme {
+	--font-display: 'Instrument Serif', serif;
+	--font-body: 'Inter', sans-serif;
+	--font-anton: 'Anton', sans-serif;
+	--color-brand-black: #000000;
+	--color-brand-gray: #6f6f6f;
+	--color-ember: #ef754a;
+	--color-paper: #f8f5ef;
+}
+
+:root {
+	font-family: var(--font-body);
+	color: #181613;
+	background: var(--color-paper);
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	scroll-behavior: smooth;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	min-width: 360px;
+	margin: 0;
+}
+
+button,
+a {
+	-webkit-tap-highlight-color: transparent;
+}
+
+button {
+	font: inherit;
+}
+
+::selection {
+	color: #181613;
+	background: #f6a582;
+}
